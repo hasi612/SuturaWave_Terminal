@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sutra-Terminal // 振動寺</title>
+    <style>
+        :root {
+            --bg-color: #0c0c0c;
+            --border-color: rgba(255, 255, 255, 0.3);
+            --accent-color: #ffffff;
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            font-family: var(--font-main);
+            height: 100vh; overflow: hidden;
+        }
+
+        /* --- 로딩 레이어 (System Booting) --- */
+        #loadingLayer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; z-index: 9999;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .booting-text { font-size: 14px; letter-spacing: 3px; margin-bottom: 20px; }
+        .progress-bar { width: 200px; height: 2px; background: rgba(255,255,255,0.1); position: relative; }
+        .progress-fill { width: 0%; height: 100%; background: white; transition: width 0.1s; }
+
+        /* --- 공통 섹션 스타일 --- */
+        section {
+            display: none; height: 100vh; width: 100vw;
+            padding: 30px; box-sizing: border-box;
+        }
+        section.active { display: flex; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- [HOME] 메인 페이지 디자인 --- */
+        #homePage {
+            flex-direction: column; justify-content: center; align-items: center;
+            background-image: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 70%);
+        }
+        .main-logo { width: 300px; margin-bottom: 50px; filter: drop-shadow(0 0 15px white); }
+        .nav-menu { display: flex; gap: 40px; }
+        
+        .nav-module {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            cursor: pointer; opacity: 0.7; transition: 0.3s;
+        }
+        .nav-module:hover { opacity: 1; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
+        .nav-module img { width: 80px; height: 80px; border: 1px dashed var(--border-color); padding: 10px; }
+        .nav-module .label { font-size: 10px; letter-spacing: 1px; }
+
+        /* --- [MEDITATION] 명상 페이지 디자인 --- */
+        #meditationPage { gap: 20px; }
+        .left-panel { flex: 2; display: flex; flex-direction: column; gap: 20px; }
+        .center-panel { flex: 4; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+        .right-panel { flex: 2; border: 1px solid var(--border-color); padding: 20px; display: flex; flex-direction: column; }
+        
+        .box { border: 1px solid var(--border-color); padding: 20px; background: rgba(255,255,255,0.02); }
+        canvas { width: 100%; height: 100px; border-top: 1px solid var(--border-color); margin-top: 10px; }
+        
+        /* 돌아가기 버튼 (모듈 047) */
+        .btn-back { position: absolute; top: 20px; right: 20px; cursor: pointer; opacity: 0.7; transition: 0.3s; text-align: center; }
+        .btn-back:hover { opacity: 1; filter: drop-shadow(0 0 5px white); }
+        .btn-back img { width: 40px; height: 40px; border: 1px solid var(--border-color); padding: 5px; }
+
+        /* 명상용 메인 이미지 */
+        #meditationImg { width: 180px; height: 180px; filter: drop-shadow(0 0 15px rgba(255,255,255,0.3)); transition: 0.1s; object-fit: contain; }
+
+        .log-header {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;
+        }
+        .log-header-left { display: flex; align-items: center; gap: 10px; }
+        .log-header img { width: 20px; height: 20px; }
+        
+        .btn-clear { cursor: pointer; opacity: 0.5; font-size: 10px; transition: 0.3s; padding: 2px 5px; border: 1px solid transparent; }
+        .btn-clear:hover { opacity: 1; border: 1px solid var(--border-color); }
+    </style>
+</head>
+<body>
+
+    <div id="loadingLayer">
+        <div class="booting-text" id="bootText">SYSTEM_INITIALIZING...</div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <section id="homePage" class="active">
+        <img src="https://i.imgur.com/FA8JJOq.png" class="main-logo" alt="SUTRA_LOGO">
+        
+        <div class="nav-menu">
+            <div class="nav-module" onclick="navigateWithLoading('meditationPage')">
+                <img src="https://i.imgur.com/1sigawa.png" alt="수행지">
+                <span class="label">MODULE#049 // 수행지</span>
+            </div>
+
+            <div class="nav-module" onclick="window.open('https://hasi612.github.io/SuturaWave_modules/', '_blank')">
+                <img src="https://i.imgur.com/PrcpHQ3.png" alt="저장소">
+                <span class="label">LOG#048 // 저장소</span>
+            </div>
+        </div>
+        <div style="margin-top: 50px; font-size: 10px; opacity: 0.3; letter-spacing: 5px;">VIBRATION_SANCTUARY_TERMINAL_V1.1</div>
+    </section>
+
+    <section id="meditationPage">
+        <div class="left-panel">
+            <div class="box" style="flex:1">
+                <div style="font-size: 12px; opacity: 0.5;">[INPUT_NOISE_DATA]</div>
+                <textarea id="noiseInput" style="width:100%; height:80px; background:transparent; border:none; color:white; resize:none; outline:none; margin-top:10px; font-family: inherit;" placeholder="정화가 필요한 노이즈를 입력하십시오..."></textarea>
+                <button onclick="startResonance()" id="startBtn" style="width:100%; background:transparent; border:1px solid white; color:white; padding:10px; cursor:pointer; margin-top:10px; letter-spacing: 2px;">START_RESONANCE</button>
+            </div>
+            <div class="box" style="flex:1">
+                <div style="font-size: 10px; opacity: 0.5;">FREQ_VISUALIZER</div>
+                <canvas id="waveCanvas"></canvas>
+            </div>
+        </div>
+
+        <div class="center-panel">
+            <div class="btn-back" onclick="navigateWithLoading('homePage')">
+                <img src="https://i.imgur.com/qpzVbFQ.png" alt="홈">
+                <div style="font-size: 8px; margin-top: 5px;">MODULE#047</div>
+            </div>
+            
+            <img id="meditationImg" src="https://i.imgur.com/1sigawa.png" alt="Core Module">
+            <div id="moduleLabel" style="margin-top: 20px; font-size: 14px; letter-spacing: 3px;">AWAITING_INPUT...</div>
+            <div id="timerDisplay" style="position:absolute; bottom:20px; font-size:12px; letter-spacing:2px; opacity: 0.5;">T-MINUS: 00:00</div>
+        </div>
+
+        <div class="right-panel">
+            <div class="log-header">
+                <div class="log-header-left">
+                    <img src="https://i.imgur.com/wcxTmyb.png" alt="Log Icon">
+                    <span>PURIFICATION_LOG</span>
+                </div>
+                <div class="btn-clear" onclick="clearLog()">[CLEAR]</div>
+            </div>
+            <div id="logContent" style="font-size: 10px; margin-top: 20px; opacity: 0.8; line-height: 2; overflow-y: auto; flex: 1;">
+                > SYSTEM_READY.<br>
+                > AWAITING_NOISE_INPUT...<br>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // ==========================================
+        // 데이터 베이스 (Set A & Set B)
+        // ==========================================
+        const setA = [
+            { id: "001", name: "불안", src: "https://i.imgur.com/heIWqsv.png" },
+            { id: "002", name: "우울", src: "https://i.imgur.com/FAWDgMC.png" },
+            { id: "003", name: "강박", src: "https://i.imgur.com/nDJ4Lfk.png" },
+            { id: "004", name: "분노", src: "https://i.imgur.com/PQBXgHH.png" },
+            { id: "005", name: "무기력", src: "https://i.imgur.com/yztoIgk.png" },
+            { id: "006", name: "공황", src: "https://i.imgur.com/527MPci.png" },
+            { id: "007", name: "집착", src: "https://i.imgur.com/lyGNCM4.png" },
+            { id: "008", name: "죄책감", src: "https://i.imgur.com/QGJWPKv.png" },
+            { id: "009", name: "공허", src: "https://i.imgur.com/H9luc16.png" },
+            { id: "010", name: "초조", src: "https://i.imgur.com/HndhEG4.png" },
+            { id: "011", name: "압박", src: "https://i.imgur.com/gWV74sA.png"},
+            { id: "012", name: "번아웃", src: "https://i.imgur.com/V2V9FhP.png" },
+            { id: "013", name: "고립", src: "https://i.imgur.com/XiBE8HV.png"},
+            { id: "014", name: "혼란", src: "https://i.imgur.com/RgaRZgR.png" },
+            { id: "015", name: "예민", src: "https://i.imgur.com/8KexRIc.png" },
+            { id: "016", name: "과민", src: "https://i.imgur.com/M7c5wUy.png" },
+            { id: "017", name: "절망", src: "https://i.imgur.com/OkOefPX.png" },
+            { id: "018", name: "긴장", src: "sampleImg" },
+            { id: "019", name: "회피", src: "https://i.imgur.com/eunUVoM.png" },
+            { id: "020", name: "무기력", src: "https://i.imgur.com/ikhKuzZ.png" }
+        ];
+
+        const setB = [
+            { id: "021", name: "만다라", src: "https://i.imgur.com/KOa05kO.png" },
+            { id: "022", name: "연꽃", src: "https://i.imgur.com/AsENOkA.png" },
+            { id: "023", name: "무한", src:"https://i.imgur.com/fHJ0ggD.png" },
+            { id: "024", name: "파동", src: "https://i.imgur.com/ld2Tx5D.png" },
+            { id: "025", name: "진동", src: "https://i.imgur.com/tfhXcB5.png" },
+            { id: "026", name: "공명", src: "https://i.imgur.com/iISAZkB.png" },
+            { id: "027", name: "균형", src: "https://i.imgur.com/HtVfCvU.png"},
+            { id: "028", name: "해탈", src: "https://i.imgur.com/RbRGmtR.png"},
+            { id: "029", name: "무상", src: "https://i.imgur.com/2MMZ8Bv.png" },
+            { id: "030", name: "고요", src: "https://i.imgur.com/5DzSkDp.png" },
+            { id: "031", name: "동기화", src: "https://i.imgur.com/5ad7yvk.png" },
+            { id: "032", name: "결정", src: "https://i.imgur.com/Zzfo5pU.png" },
+            { id: "033", name: "심도", src: "https://i.imgur.com/BZjcs0d.png" },
+            { id: "034", name: "궤도", src: "https://i.imgur.com/aOxuh6H.png" },
+            { id: "035", name: "공백", src: "https://i.imgur.com/aJ5SIRQ.png"},
+            { id: "036", name: "투과", src: "https://i.imgur.com/DonHiLN.png" },
+            { id: "037", name: "지평선", src: "https://i.imgur.com/K46AWWN.png" },
+            { id: "038", name: "흐름", src: "https://i.imgur.com/DGtuocS.png" },
+            { id: "039", name: "각인", src: "https://i.imgur.com/NuXLTeV.png" },
+            { id: "040", name: "회로", src: "https://i.imgur.com/RE9iuYF.png" }
+        ];
+
+        // ==========================================
+        // 네비게이션 및 로딩 시스템
+        // ==========================================
+        function navigateWithLoading(targetId) {
+            const loadingLayer = document.getElementById('loadingLayer');
+            const progressFill = document.getElementById('progressFill');
+            const bootText = document.getElementById('bootText');
+            
+            loadingLayer.style.display = 'flex';
+            let progress = 0;
+            
+            const interval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    
+                    setTimeout(() => {
+                        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+                        document.getElementById(targetId).classList.add('active');
+                        loadingLayer.style.display = 'none';
+                        progressFill.style.width = '0%';
+                        
+                        if(targetId === 'meditationPage') {
+                            startWave();
+                            resetMeditationUI();
+                        }
+                    }, 500);
+                }
+                progressFill.style.width = progress + '%';
+                bootText.innerText = `CONNECTING_TO_${targetId.toUpperCase()}... ${Math.floor(progress)}%`;
+            }, 60);
+        }
+
+        // ==========================================
+        // 명상(정화) 프로세스 로직 (총 10초 시연용: 분석 3초 -> 정화 7초)
+        // ==========================================
+        let animationInterval;
+        let waveState = 'idle';
+
+        function startResonance() {
+            const inputText = document.getElementById('noiseInput').value;
+            if(!inputText.trim()) {
+                alert("정화할 노이즈를 입력해주십시오.");
+                return;
+            }
+
+            const btn = document.getElementById('startBtn');
+            btn.disabled = true;
+            btn.innerText = "PROCESSING...";
+
+            const mainImg = document.getElementById('meditationImg');
+            const moduleLabel = document.getElementById('moduleLabel');
+            const logBox = document.getElementById('logContent');
+            const timerDisplay = document.getElementById('timerDisplay');
+            
+            logBox.innerHTML += `> ANALYZING_NOISE_DATA...<br>`;
+            waveState = 'chaotic';
+
+            // Phase 1: 3초 동안 Set A 노이즈 분석 애니메이션
+            let timeElapsed = 0;
+            animationInterval = setInterval(() => {
+                const randomA = setA[Math.floor(Math.random() * setA.length)];
+                if(randomA.src !== "sampleImg") mainImg.src = randomA.src;
+                moduleLabel.innerText = `ANALYZING: #${randomA.id} // ${randomA.name}`;
+                
+                timeElapsed += 100;
+                if(timeElapsed % 1000 === 0) {
+                    timerDisplay.innerText = `ANALYSIS_PHASE: 00:0${3 - (timeElapsed/1000)}`;
+                }
+
+                // 3초(3000ms) 도달 시 Phase 1 종료 및 결과 도출
+                if(timeElapsed >= 3000) {
+                    clearInterval(animationInterval);
+                    const finalNoise = setA[Math.floor(Math.random() * setA.length)];
+                    logBox.innerHTML += `<span style="color:#ff5555;">> NOISE_DETECTED: #${finalNoise.id} [${finalNoise.name}]</span><br>`;
+                    logBox.innerHTML += `> INITIATING_PURIFICATION_SEQUENCE...<br>`;
+                    
+                    // Phase 2 시작
+                    startPhase2();
+                }
+            }, 100);
+        }
+
+        function startPhase2() {
+            const mainImg = document.getElementById('meditationImg');
+            const moduleLabel = document.getElementById('moduleLabel');
+            const logBox = document.getElementById('logContent');
+            const timerDisplay = document.getElementById('timerDisplay');
+            
+            waveState = 'processing';
+            let timeElapsed = 0;
+
+            // Phase 2: 7초 동안 Set B 정화 애니메이션
+            animationInterval = setInterval(() => {
+                const randomB = setB[Math.floor(Math.random() * setB.length)];
+                mainImg.src = randomB.src;
+                moduleLabel.innerText = `PURIFYING...`;
+                
+                timeElapsed += 150; // Set B는 조금 더 부드럽게 150ms 간격으로 전환
+                
+                // 150ms 간격이므로 1초 단위를 맞추기 위한 보정
+                if(timeElapsed % 1050 === 0 || timeElapsed % 1000 === 0 || Math.floor(timeElapsed) % 1000 < 150) { 
+                    let currentSec = Math.floor(timeElapsed / 1000);
+                    let secondsLeft = 7 - currentSec;
+                    if(secondsLeft < 0) secondsLeft = 0;
+                    let secStr = secondsLeft < 10 ? `0${secondsLeft}` : secondsLeft;
+                    timerDisplay.innerText = `PURIFICATION_PHASE: 00:${secStr}`;
+                }
+
+                // 7초(7000ms) 도달 시 Phase 2 종료 및 결과 도출
+                if(timeElapsed >= 7000) {
+                    clearInterval(animationInterval);
+                    waveState = 'calm';
+                    
+                    const finalPurified = setB[Math.floor(Math.random() * setB.length)];
+                    mainImg.src = finalPurified.src;
+                    moduleLabel.innerText = `PURIFIED: #${finalPurified.id} // ${finalPurified.name}`;
+                    
+                    logBox.innerHTML += `<span style="color:#55ff55;">> PURIFICATION_COMPLETE: #${finalPurified.id} [${finalPurified.name}]</span><br>`;
+                    logBox.innerHTML += `> DATA_SAVED_TO_ARCHIVE.<br>`;
+                    timerDisplay.innerText = `PROCESS_TERMINATED.`;
+
+                    const btn = document.getElementById('startBtn');
+                    btn.disabled = false;
+                    btn.innerText = "START_RESONANCE";
+                    document.getElementById('noiseInput').value = "";
+                }
+            }, 150);
+        }
+
+        function resetMeditationUI() {
+            clearInterval(animationInterval);
+            waveState = 'idle';
+            document.getElementById('meditationImg').src = "https://i.imgur.com/1sigawa.png";
+            document.getElementById('moduleLabel').innerText = "AWAITING_INPUT...";
+            document.getElementById('timerDisplay').innerText = "T-MINUS: 00:00";
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('startBtn').innerText = "START_RESONANCE";
+        }
+
+        // ==========================================
+        // 로그 초기화 기능 추가
+        // ==========================================
+        function clearLog() {
+            const logBox = document.getElementById('logContent');
+            logBox.innerHTML = `> SYSTEM_LOG_CLEARED.<br>> AWAITING_NOISE_INPUT...<br>`;
+        }
+
+        // ==========================================
+        // 파동 시각화 (Canvas)
+        // ==========================================
+        let canvasAnimationId;
+        function startWave() {
+            const canvas = document.getElementById('waveCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 캔버스 크기 맞춤
+            canvas.width = canvas.parentElement.clientWidth - 40; 
+            canvas.height = 100;
+
+            let time = 0;
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(255,255,255,0.7)";
+                ctx.lineWidth = 1;
+
+                let amplitude = 10;
+                let frequency = 0.05;
+                let noise = 0;
+
+                if (waveState === 'chaotic') { amplitude = 30; frequency = 0.2; noise = 20; }
+                else if (waveState === 'processing') { amplitude = 20; frequency = 0.1; noise = 5; }
+                else if (waveState === 'calm') { amplitude = 5; frequency = 0.02; noise = 0; }
+
+                for (let x = 0; x < canvas.width; x++) {
+                    let randomNoise = (Math.random() - 0.5) * noise;
+                    let y = canvas.height/2 + Math.sin(x * frequency + time) * amplitude + randomNoise;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                time += 0.05;
+                canvasAnimationId = requestAnimationFrame(animate);
+            }
+            if(canvasAnimationId) cancelAnimationFrame(canvasAnimationId);
+            animate();
+        }
+    </script>
+</body>
+</html>
